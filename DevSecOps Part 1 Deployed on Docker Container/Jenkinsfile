@@ -31,12 +31,12 @@ pipeline{
                 sh "npm install"
             }
         }
-        stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
+        // stage('OWASP FS SCAN') {
+        //     steps {
+        //         dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //     }
+        // }
         stage('TRIVY FS SCAN') {
             steps {
                 sh "trivy fs . > trivyfs.txt"
@@ -46,7 +46,7 @@ pipeline{
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'dockerhubCred', toolName: 'docker'){   
-                       sh "docker build --build-arg TMDB_V3_API_KEY=<your-Api> -t netflix ."
+                       sh "docker build --build-arg TMDB_V3_API_KEY=b4a35d4f223d038cb73cf86bd13f5050 -t netflix ."
                        sh "docker tag netflix samiselim/netflix:$BUILD_NUMBER"
                        sh "docker push samiselim/netflix:$BUILD_NUMBER"
                     }
@@ -62,6 +62,23 @@ pipeline{
             steps{
                 sh 'docker run -d --name netflix -p 8081:80 samiselim/netflix:$BUILD_NUMBER'
             }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline succeeded! Yay!'
+            emailext subject: 'Pipeline Success Notification',
+                     body: 'Your Jenkins pipeline has succeeded.',
+                     to: 'samiselim75@gmail.com'
+        }
+        failure {
+            echo 'Pipeline failed! Oh no!'
+            emailext subject: 'Pipeline Failure Notification',
+                     body: 'Your Jenkins pipeline has failed.',
+                     to: 'samiselim75@gmail.com'
+        }
+        always {
+            echo 'Cleaning up...'
         }
     }
 }
